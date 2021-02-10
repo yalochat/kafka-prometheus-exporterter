@@ -55,6 +55,14 @@ Compile
 make
 ```
 
+### Cross compile
+
+If you need to build an image for Linux and you are running a non linux OS, e.g. macOS. This does not make use of `promu`.
+
+```shell
+env GOOS=linux GOARCH=amd64 go build
+```
+
 ### Build Docker Image
 
 ```shell

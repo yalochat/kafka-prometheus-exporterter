@@ -1,3 +1,9 @@
+# 1.2.7
+This new release introduces:
+  * Support for SASL_SSL with PLAIN sasl mechanism
+  * Replacement on the regexp dependency to allow for negated filtering with [regexp2](github.com/dlclark/regexp2).
+  * Logging to allow for better debugging when finding connection errors.
+  * Add instructions on how to cross compile if needed.
 # 1.2.0
 This new release introduces:
   * A new method `SetReportCaller` in the `Logger` to enable the file, line and calling function from which the trace has been issued

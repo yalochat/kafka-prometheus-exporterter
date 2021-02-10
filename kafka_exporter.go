@@ -2,19 +2,18 @@ package main
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/dlclark/regexp2"
 	kazoo "github.com/krallistic/kazoo-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -51,8 +50,8 @@ var (
 // the prometheus metrics package.
 type Exporter struct {
 	client                  sarama.Client
-	topicFilter             *regexp.Regexp
-	groupFilter             *regexp.Regexp
+	topicFilter             *regexp2.Regexp
+	groupFilter             *regexp2.Regexp
 	mu                      sync.Mutex
 	useZooKeeperLag         bool
 	zookeeperClient         *kazoo.Kazoo
@@ -124,7 +123,16 @@ func NewExporter(opts kafkaOpts, topicFilter string, groupFilter string) (*Expor
 	}
 	config.Version = kafkaVersion
 
+	plog.Infof("Topic filter %s", topicFilter)
+	plog.Infof("Group filter %s", groupFilter)
+
 	if opts.useSASL {
+
+		plog.Infof("Sasl mechanism %s", opts.saslMechanism)
+		plog.Infof("Sasl handshake %v", opts.useSASLHandshake)
+		plog.Infof("Sasl username length %d", len(opts.saslUsername))
+		plog.Infof("Sasl password length %d", len(opts.saslPassword))
+
 		// Convert to lowercase so that SHA512 and SHA256 is still valid
 		opts.saslMechanism = strings.ToLower(opts.saslMechanism)
 		switch opts.saslMechanism {
@@ -136,6 +144,7 @@ func NewExporter(opts kafkaOpts, topicFilter string, groupFilter string) (*Expor
 			config.Net.SASL.Mechanism = sarama.SASLMechanism(sarama.SASLTypeSCRAMSHA256)
 
 		case "plain":
+			config.Net.SASL.Mechanism = "PLAIN"
 		default:
 			plog.Fatalf("invalid sasl mechanism \"%s\": can only be \"scram-sha256\", \"scram-sha512\" or \"plain\"", opts.saslMechanism)
 		}
@@ -155,9 +164,12 @@ func NewExporter(opts kafkaOpts, topicFilter string, groupFilter string) (*Expor
 	if opts.useTLS {
 		config.Net.TLS.Enable = true
 
+		plog.Infof("TLS Enabled %v", config.Net.TLS.Enable)
+		plog.Infof("TLS Insecure Skip TLS Verify %v", opts.tlsInsecureSkipTLSVerify)
+
 		config.Net.TLS.Config = &tls.Config{
-			RootCAs:            x509.NewCertPool(),
 			InsecureSkipVerify: opts.tlsInsecureSkipTLSVerify,
+			ClientAuth:         0,
 		}
 
 		if opts.tlsCAFile != "" {
@@ -205,8 +217,8 @@ func NewExporter(opts kafkaOpts, topicFilter string, groupFilter string) (*Expor
 	// Init our exporter.
 	return &Exporter{
 		client:                  client,
-		topicFilter:             regexp.MustCompile(topicFilter),
-		groupFilter:             regexp.MustCompile(groupFilter),
+		topicFilter:             regexp2.MustCompile(topicFilter, 0),
+		groupFilter:             regexp2.MustCompile(groupFilter, 0),
 		useZooKeeperLag:         opts.useZooKeeperLag,
 		zookeeperClient:         zookeeperClient,
 		nextMetadataRefresh:     time.Now(),
@@ -263,7 +275,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	getTopicMetrics := func(topic string) {
 		defer wg.Done()
-		if e.topicFilter.MatchString(topic) {
+		match, err := e.topicFilter.MatchString(topic)
+
+		if err != nil {
+			plog.Errorf("Did not match topic: %s: %v", topic, err)
+			return
+		}
+
+		if match {
 			partitions, err := e.client.Partitions(topic)
 			if err != nil {
 				plog.Errorf("Cannot get partitions of topic %s: %v", topic, err)
@@ -388,7 +407,13 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 		groupIds := make([]string, 0)
 		for groupId := range groups.Groups {
-			if e.groupFilter.MatchString(groupId) {
+			match, err := e.groupFilter.MatchString(groupId)
+
+			if err != nil {
+				plog.Errorf("Did not match groupId: %s: %v", groupId, err)
+			}
+
+			if match {
 				groupIds = append(groupIds, groupId)
 			}
 		}
