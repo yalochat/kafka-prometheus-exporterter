@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- https://github.com/yalochat/argocd-service-manifests//kustomize/platform-app/base/?ref=main
+patches:
+- path: platform-app.yaml
