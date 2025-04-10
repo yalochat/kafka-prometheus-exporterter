@@ -1,10 +1,8 @@
 apiVersion: builtin
 kind: HelmChartInflationGenerator
 metadata:
-  name: platform-app
+  name: prometheus-kafka-exporter
 releaseName: prometheus-kafka-exporter-ww-us-001
-name: platform-app
-version: 0.2.0
 valuesInline:    
   replicaCount: 1
   rbac:
