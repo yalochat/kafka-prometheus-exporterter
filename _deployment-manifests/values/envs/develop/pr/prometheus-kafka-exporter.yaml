@@ -1,0 +1,27 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: prometheus-kafka-exporter
+releaseName: prometheus-kafka-exporter-ww-us-001
+valuesInline:    
+  replicaCount: 1
+  rbac:
+      create: false
+      pspEnabled: false
+  annotations:
+      ad.datadoghq.com/prometheus-kafka-exporter.check_names: '["openmetrics"]'
+      ad.datadoghq.com/prometheus-kafka-exporter.init_configs: '[{}]'
+      ad.datadoghq.com/prometheus-kafka-exporter.instances: '[{"prometheus_url": "http://%%host%%:%%port%%/metrics", "namespace": "databases", "min_collection_interval": 10, "metrics": ["kafka_consumergroup_lag"] }]'
+  image:
+      repository: us-docker.pkg.dev/common-private-artifacts/kafka-prometheus-exporter/kafka-prometheus-exporter
+      tag: v1.2.7
+  topicFilter: "^(flow_builder.interpreter_processing_actions)$"
+  groupFilter: "^(interpreter-processing-actions-v3)$"
+  kafkaServer:
+      - pkc-v77p5.us-east1.gcp.confluent.cloud:9092
+  prometheus:
+      serviceMonitor:
+          namespace: databases
+  
+  
+  
