@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-kafka-exporter.fullname" . }}
+  labels:
+    app: {{ template "prometheus-kafka-exporter.name" . }}
+    chart: {{ template "prometheus-kafka-exporter.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-kafka-exporter.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+    {{- if .Values.annotations }}
+      annotations:
+{{ toYaml .Values.annotations | indent 8 }}
+    {{- end }}
+      labels:
+        app: {{ template "prometheus-kafka-exporter.name" . }}
+        release: {{ .Release.Name }}
+        {{- if  .Values.labels }}
+{{ toYaml .Values.labels | indent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ template "prometheus-kafka-exporter.serviceAccountName" . }}
+      containers:
+        - command:
+            - sh
+            - -c
+          args:
+            - |
+              /bin/kafka_exporter \
+              {{- range $server := .Values.kafkaServer }}
+              --kafka.server={{ $server }} \
+              {{- end }}
+              {{- if .Values.sasl.enabled }}
+              --sasl.enabled \
+              {{- if not .Values.sasl.handshake }}
+              --sasl.handshake=false \
+              {{- end }}
+              --sasl.username=$SASL_USERNAME \
+              --sasl.password=$SASL_PASSWORD \
+              --sasl.mechanism=PLAIN \
+              --tls.enabled \
+              --tls.insecure-skip-tls-verify \
+              {{- end }}
+              --topic.filter="{{ .Values.topicFilter }}" \
+              --group.filter="{{ .Values.groupFilter }}"
+          {{- if .Values.sasl.enabled }}
+          env:
+            - name: SASL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.sasl.secretName }}
+                  key: user
+            - name: SASL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.sasl.secretName }}
+                  key: password
+          {{- end }}
+          name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: exporter-port
+              containerPort: 9308
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: exporter-port
+          readinessProbe:
+            httpGet:
+              path: /
+              port: exporter-port
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

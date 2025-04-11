@@ -2,13 +2,13 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "kafka-exporter.fullname" . }}
+  name: {{ include "prometheus-kafka-exporter.fullname" . }}
   {{- if .Values.prometheus.serviceMonitor.namespace }}
   namespace: {{ .Values.prometheus.serviceMonitor.namespace }}
   {{- end }}
   labels:
-    app.kubernetes.io/name: {{ include "kafka-exporter.name" . }}
-    helm.sh/chart: {{ include "kafka-exporter.chart" . }}
+    app.kubernetes.io/name: {{ include "prometheus-kafka-exporter.name" . }}
+    helm.sh/chart: {{ include "prometheus-kafka-exporter.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     {{- if .Values.prometheus.serviceMonitor.additionalLabels }}
@@ -18,13 +18,13 @@ spec:
   jobLabel: jobLabel
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "kafka-exporter.name" . }}
-      helm.sh/chart: {{ include "kafka-exporter.chart" . }}
+      app.kubernetes.io/name: {{ include "prometheus-kafka-exporter.name" . }}
+      helm.sh/chart: {{ include "prometheus-kafka-exporter.chart" . }}
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace }}
   endpoints:
-  - port: metrics
+  - port: exporter-port
     interval: {{ .Values.prometheus.serviceMonitor.interval }}
     {{- if .Values.prometheus.serviceMonitor.scrapeTimeout }}
     scrapeTimeout: {{ .Values.prometheus.serviceMonitor.scrapeTimeout }}

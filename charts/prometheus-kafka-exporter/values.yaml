@@ -1,52 +1,43 @@
-# Default values for kafka-exporter.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  # Specifies whether a PodSecurityPolicy should be created
+  pspEnabled: true
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
 
 replicaCount: 1
-
 image:
   repository: danielqsj/kafka-exporter
   tag: latest
   pullPolicy: IfNotPresent
 
-nameOverride: ""
-fullnameOverride: ""
+kafkaServer:
+  - kafka-server:9092
+
+sasl:
+  enabled: true
+  handshake: true
+  secretName: 'api-cc-creds'
 
 service:
   type: ClusterIP
   port: 9308
-
-kafkaExporter:
-  kafka:
-    servers: []
-      # - kafka:9092
-    # version: "1.0.0"
-
-  sasl:
-    enabled: false
-    handshake: true
-    username: ""
-    password: ""
-
-  tls:
-    enabled: false
-    insecure-skip-tls-verify: false
-    caFile: ""
-    certFile: ""
-    keyFile: ""
-
-  log:
-    level: info
-    enableSarama: false
+  annotations: {}
 
 prometheus:
   serviceMonitor:
     enabled: true
     namespace: monitoring
     interval: "30s"
-    additionalLabels:
-      app: kafka-exporter
+    additionalLabels: {}
 
+topicFilter: .*
+groupFilter: .*
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -54,11 +45,11 @@ resources: {}
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
   # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
+  #  cpu: 100m
+  #  memory: 128Mi
   # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+  #  cpu: 100m
+  #  memory: 128Mi
 
 nodeSelector: {}
 
