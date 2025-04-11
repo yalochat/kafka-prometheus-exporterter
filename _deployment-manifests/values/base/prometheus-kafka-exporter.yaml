@@ -2,9 +2,10 @@ apiVersion: builtin
 kind: HelmChartInflationGenerator
 metadata:
   name: prometheus-kafka-exporter
-releaseName: prometheus-kafka-exporter-ww-us-001
+releaseName: prometheus-kafka-exporter
 repo: http://chartmuseum-chartmuseum.chartmuseum:8080
 name: prometheus-kafka-exporter
+namespace: databases
 version: 0.2.0
 valuesInline:    
   replicaCount: 1

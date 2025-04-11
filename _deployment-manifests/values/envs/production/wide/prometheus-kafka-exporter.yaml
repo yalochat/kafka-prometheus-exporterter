@@ -1,0 +1,10 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: prometheus-kafka-exporter
+releaseName: prometheus-kafka-exporter-ww-us-001
+
+valuesInline:    
+  sasl:
+    secretName: prometheus-kafka-exporter
+  
