@@ -20,7 +20,7 @@ valuesInline:
       repository: us-docker.pkg.dev/common-private-artifacts/kafka-prometheus-exporter/kafka-prometheus-exporter
       tag: v1.2.7
   topicFilter: "^(flow_builder.interpreter_processing_actions)$"
-  groupFilter: "^(interpreter-processing-actions-v3)$"
+  groupFilter: "^(interpreter-processing-actions-v4)$"
   kafkaServer:
       - pkc-v77p5.us-east1.gcp.confluent.cloud:9092
   prometheus:
